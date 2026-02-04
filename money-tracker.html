@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Учет Перепродаж</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.5s ease;
+        }
+
+        .header h1 {
+            font-size: 42px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .header p {
+            color: #888;
+            font-size: 16px;
+        }
+
+        /* Stats Section */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+        }
+
+        .stat-card.expense::before {
+            background: linear-gradient(90deg, #f44336, #d32f2f);
+        }
+
+        .stat-card.profit::before {
+            background: linear-gradient(90deg, #2196F3, #1976D2);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #888;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 48px;
+            font-weight: 900;
+            margin-bottom: 10px;
+        }
+
+        .stat-card.income .stat-value {
+            color: #4CAF50;
+        }
+
+        .stat-card.expense .stat-value {
+            color: #f44336;
+        }
+
+        .stat-card.profit .stat-value {
+            color: #2196F3;
+        }
+
+        .stat-count {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* Action Button */
+        .action-section {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: fadeIn 0.5s ease 0.2s both;
+        }
+
+        .btn-add {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 18px 45px;
+            font-size: 18px;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-add:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(76, 175, 80, 0.6);
+        }
+
+        .btn-add:active {
+            transform: translateY(-1px);
+        }
+
+        /* Table Section */
+        .table-container {
+            background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: fadeInUp 0.5s ease 0.3s both;
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, #3a3a3a 0%, #4a4a4a 100%);
+            padding: 20px 30px;
+            border-bottom: 3px solid #4CAF50;
+        }
+
+        .table-header h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table thead {
+            background: #3a3a3a;
+        }
+
+        .table th {
+            padding: 18px 15px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            border-bottom: 2px solid #4a4a4a;
+        }
+
+        .table th:first-child {
+            padding-left: 30px;
+            width: 60px;
+        }
+
+        .table tbody tr {
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .table tbody tr:hover {
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        .table td {
+            padding: 20px 15px;
+            font-size: 15px;
+        }
+
+        .table td:first-child {
+            padding-left: 30px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: #fff;
+            font-size: 16px;
+        }
+
+        .price-buy {
+            color: #f44336;
+            font-weight: 700;
+            font-size: 17px;
+        }
+
+        .price-sell {
+            color: #4CAF50;
+            font-weight: 700;
+            font-size: 17px;
+        }
+
+        .price-empty {
+            color: #555;
+            font-style: italic;
+        }
+
+        .profit-positive {
+            color: #4CAF50;
+            font-weight: 700;
+            font-size: 17px;
+        }
+
+        .profit-negative {
+            color: #f44336;
+            font-weight: 700;
+            font-size: 17px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-available {
+            background: rgba(255, 152, 0, 0.2);
+            color: #FF9800;
+            border: 2px solid #FF9800;
+        }
+
+        .status-sold {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+            border: 2px solid #4CAF50;
+        }
+
+        .date-text {
+            color: #666;
+            font-size: 13px;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-action {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-sell {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .btn-sell:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn-edit {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+        }
+
+        .btn-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+        }
+
+        .btn-delete:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.4);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+            padding: 40px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: slideIn 0.3s ease;
+            position: relative;
+        }
+
+        .modal-header {
+            margin-bottom: 30px;
+        }
+
+        .modal-header h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .modal-header p {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 32px;
+            color: #666;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            color: #f44336;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            color: #888;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px 20px;
+            background: #1a1a1a;
+            border: 2px solid #3a3a3a;
+            border-radius: 12px;
+            color: #e0e0e0;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(76, 175, 80, 0.4);
+        }
+
+        .current-price {
+            background: rgba(244, 67, 54, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #f44336;
+        }
+
+        .current-price p {
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .current-price .price {
+            color: #f44336;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+        }
+
+        .empty-state-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-state h3 {
+            font-size: 24px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: #555;
+            font-size: 16px;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4a4a4a;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #5a5a5a;
+        }
+
+        /* Tabs */
+        .tabs-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 40px;
+            justify-content: center;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .tab-btn {
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+            border: 2px solid #3a3a3a;
+            border-radius: 15px;
+            color: #888;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .tab-btn:hover {
+            border-color: #4CAF50;
+            color: #e0e0e0;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            border-color: #4CAF50;
+            color: white;
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Rental specific styles */
+        .rental-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .category-list {
+            background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .category-item {
+            padding: 20px;
+            background: #1a1a1a;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .category-item:hover {
+            border-color: #4CAF50;
+            transform: translateX(5px);
+        }
+
+        .category-item.active {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            border-color: #4CAF50;
+        }
+
+        .category-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .category-description {
+            font-size: 13px;
+            color: #888;
+        }
+
+        .category-item.active .category-description {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .assets-panel {
+            background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .asset-card {
+            background: #1a1a1a;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .asset-card:hover {
+            border-color: #4CAF50;
+            transform: translateY(-2px);
+        }
+
+        .asset-info h3 {
+            font-size: 18px;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .asset-status-text {
+            font-size: 13px;
+            color: #888;
+        }
+
+        .asset-status-badge {
+            padding: 10px 25px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .asset-free {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+            border: 2px solid #4CAF50;
+        }
+
+        .asset-occupied {
+            background: rgba(244, 67, 54, 0.2);
+            color: #f44336;
+            border: 2px solid #f44336;
+        }
+
+        .deals-list {
+            margin-top: 20px;
+        }
+
+        .deal-item {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .deal-dates {
+            font-size: 13px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 32px;
+            }
+
+            .stat-value {
+                font-size: 36px;
+            }
+
+            .table-container {
+                overflow-x: auto;
+            }
+
+            .table {
+                min-width: 900px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn-action {
+                width: 100%;
+            }
+
+            .rental-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>💰 Учет Бизнеса</h1>
+            <p>Отслеживайте перепродажи и управляйте арендой</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs-container">
+            <button class="tab-btn active" onclick="switchTab('resale')">
+                📦 Перепродажи
+            </button>
+            <button class="tab-btn" onclick="switchTab('rental')">
+                🚗 Аренда
+            </button>
+        </div>
+
+        <!-- Resale Tab -->
+        <div id="resale-tab" class="tab-content active">
+        <!-- Stats -->
+        <div class="stats-container">
+            <div class="stat-card income">
+                <div class="stat-label">Доход</div>
+                <div class="stat-value" id="totalIncome">$ 0.00</div>
+                <div class="stat-count" id="soldCount">0 продано</div>
+            </div>
+            <div class="stat-card expense">
+                <div class="stat-label">Расходы</div>
+                <div class="stat-value" id="totalExpense">$ 0.00</div>
+                <div class="stat-count" id="investedCount">0 вложено</div>
+            </div>
+            <div class="stat-card profit">
+                <div class="stat-label">Прибыль</div>
+                <div class="stat-value" id="totalProfit">$ 0.00</div>
+                <div class="stat-count" id="profitPercent">0%</div>
+            </div>
+        </div>
+
+        <!-- Add Button -->
+        <div class="action-section">
+            <button class="btn-add" onclick="openAddModal()">
+                + Добавить покупку
+            </button>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container">
+            <div class="table-header">
+                <h2>📦 Список товаров</h2>
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Название</th>
+                            <th>Куплено за</th>
+                            <th>Продано за</th>
+                            <th>Прибыль</th>
+                            <th>Статус</th>
+                            <th>Дата</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsTable">
+                        <!-- Items will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <div class="empty-state-icon">📦</div>
+                <h3>Пока нет товаров</h3>
+                <p>Добавьте первую покупку, чтобы начать учет</p>
+            </div>
+        </div>
+        </div>
+        <!-- End Resale Tab -->
+
+        <!-- Rental Tab -->
+        <div id="rental-tab" class="tab-content">
+            <!-- Rental Stats -->
+            <div class="stats-container">
+                <div class="stat-card income">
+                    <div class="stat-label">Доход</div>
+                    <div class="stat-value" id="rentalIncome">$ 0</div>
+                    <div class="stat-count" id="rentalDealsCount">0 сделок</div>
+                </div>
+                <div class="stat-card expense">
+                    <div class="stat-label">Расходы</div>
+                    <div class="stat-value" id="rentalExpense">$ 0</div>
+                    <div class="stat-count" id="rentalExpensesCount">0 расходов</div>
+                </div>
+                <div class="stat-card profit">
+                    <div class="stat-label">Прибыль</div>
+                    <div class="stat-value" id="rentalProfit">$ 0</div>
+                    <div class="stat-count" id="rentalAssetsCount">0 имуществ</div>
+                </div>
+            </div>
+
+            <!-- Add Category Button -->
+            <div class="action-section">
+                <button class="btn-add" onclick="openAddCategoryModal()">
+                    + Добавить категорию
+                </button>
+            </div>
+
+            <!-- Rental Grid -->
+            <div class="rental-grid">
+                <!-- Categories List -->
+                <div class="category-list">
+                    <h2 style="margin-bottom: 20px; color: #fff; font-size: 20px;">КАТЕГОРИИ ИМУЩЕСТВА</h2>
+                    <div id="categoriesList">
+                        <div class="empty-state" style="padding: 40px 20px;">
+                            <div class="empty-state-icon">🏢</div>
+                            <h3 style="font-size: 18px;">Нет категорий</h3>
+                            <p>Добавьте первую категорию</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assets Panel -->
+                <div class="assets-panel">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="color: #fff; font-size: 20px;" id="selectedCategoryName">Выберите категорию</h2>
+                        <button class="btn-add" onclick="openAddAssetModal()" style="padding: 10px 20px; font-size: 14px;" id="addAssetBtn" disabled>
+                            + Добавить имущество
+                        </button>
+                    </div>
+                    <div id="assetsList">
+                        <div class="empty-state" style="padding: 40px 20px;">
+                            <div class="empty-state-icon">🚗</div>
+                            <h3 style="font-size: 18px;">Выберите категорию</h3>
+                            <p>Выберите категорию слева</p>
+                        </div>
+                    </div>
+                    <div id="dealsList" class="deals-list" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+        <!-- End Rental Tab -->
+    </div>
+
+    <!-- Add Category Modal -->
+    <div class="modal" id="addCategoryModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('addCategoryModal')">&times;</button>
+            <div class="modal-header">
+                <h2>Добавить категорию</h2>
+                <p>Создайте категорию для имущества</p>
+            </div>
+            <form id="addCategoryForm">
+                <div class="form-group">
+                    <label>Название категории</label>
+                    <input type="text" id="categoryName" placeholder="Например: Автомобили" required>
+                </div>
+                <div class="form-group">
+                    <label>Описание</label>
+                    <input type="text" id="categoryDescription" placeholder="Краткое описание" required>
+                </div>
+                <button type="submit" class="btn-submit">Создать</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Asset Modal -->
+    <div class="modal" id="addAssetModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('addAssetModal')">&times;</button>
+            <div class="modal-header">
+                <h2>Добавить имущество</h2>
+                <p>Добавьте новое имущество в категорию</p>
+            </div>
+            <form id="addAssetForm">
+                <div class="form-group">
+                    <label>Название</label>
+                    <input type="text" id="assetName" placeholder="Например: BMW X7" required>
+                </div>
+                <button type="submit" class="btn-submit">Добавить</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Deal Modal -->
+    <div class="modal" id="addDealModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('addDealModal')">&times;</button>
+            <div class="modal-header">
+                <h2>Новая сделка</h2>
+                <p id="dealAssetName"></p>
+            </div>
+            <form id="addDealForm">
+                <div class="form-group">
+                    <label>Цена за 1 час ($)</label>
+                    <input type="number" id="dealPricePerHour" placeholder="0" step="1" required oninput="calculateDealTotal()">
+                </div>
+                <div class="form-group">
+                    <label>Количество часов (макс. 100)</label>
+                    <input type="number" id="dealHours" placeholder="0" step="1" min="1" max="100" required oninput="calculateDealTotal()">
+                </div>
+                <div class="form-group">
+                    <label style="color: #4CAF50;">Общая сумма</label>
+                    <input type="text" id="dealTotalDisplay" readonly style="background: #1a1a1a; color: #4CAF50; font-size: 24px; font-weight: 700; text-align: center; border-color: #4CAF50;" value="$ 0">
+                </div>
+                <div class="form-group">
+                    <label>Дата начала</label>
+                    <input type="datetime-local" id="dealStartDate" required>
+                </div>
+                <div class="form-group">
+                    <label>Дата окончания</label>
+                    <input type="datetime-local" id="dealEndDate" required>
+                </div>
+                <button type="submit" class="btn-submit">Создать сделку</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Expense Modal -->
+    <div class="modal" id="addExpenseModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('addExpenseModal')">&times;</button>
+            <div class="modal-header">
+                <h2>Добавить расход</h2>
+                <p>Запишите расход на имущество</p>
+            </div>
+            <form id="addExpenseForm">
+                <div class="form-group">
+                    <label>Сумма расхода ($)</label>
+                    <input type="number" id="expenseAmount" placeholder="0" step="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Комментарий</label>
+                    <input type="text" id="expenseComment" placeholder="Например: Заправка" required>
+                </div>
+                <button type="submit" class="btn-submit">Добавить</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Item Modal -->
+    <div class="modal" id="addModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('addModal')">&times;</button>
+            <div class="modal-header">
+                <h2>Добавить покупку</h2>
+                <p>Укажите название товара и цену покупки</p>
+            </div>
+            <form id="addForm">
+                <div class="form-group">
+                    <label>Название товара</label>
+                    <input type="text" id="addName" placeholder="Например: iPhone 15 Pro" required>
+                </div>
+                <div class="form-group">
+                    <label>Цена покупки ($)</label>
+                    <input type="number" id="addPrice" placeholder="0" step="1" required>
+                </div>
+                <button type="submit" class="btn-submit">Добавить</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sell Item Modal -->
+    <div class="modal" id="sellModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('sellModal')">&times;</button>
+            <div class="modal-header">
+                <h2>Продать товар</h2>
+                <p id="sellItemName"></p>
+            </div>
+            <div class="current-price">
+                <p>Куплено за:</p>
+                <div class="price" id="sellBuyPrice">$ 0.00</div>
+            </div>
+            <form id="sellForm">
+                <div class="form-group">
+                    <label>Цена продажи ($)</label>
+                    <input type="number" id="sellPrice" placeholder="0" step="1" required>
+                </div>
+                <button type="submit" class="btn-submit">Продать</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Item Modal -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('editModal')">&times;</button>
+            <div class="modal-header">
+                <h2>Редактировать</h2>
+                <p>Измените данные товара</p>
+            </div>
+            <form id="editForm">
+                <div class="form-group">
+                    <label>Название товара</label>
+                    <input type="text" id="editName" required>
+                </div>
+                <div class="form-group">
+                    <label>Цена покупки ($)</label>
+                    <input type="number" id="editBuyPrice" step="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Цена продажи ($)</label>
+                    <input type="number" id="editSellPrice" step="1" placeholder="Оставьте пустым, если не продано">
+                </div>
+                <button type="submit" class="btn-submit">Сохранить</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Data storage
+        let items = JSON.parse(localStorage.getItem('moneyTrackerItems')) || [];
+        let categories = JSON.parse(localStorage.getItem('rentalCategories')) || [];
+        let currentEditIndex = null;
+        let currentSellIndex = null;
+        let selectedCategoryId = null;
+        let selectedAssetId = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            renderItems();
+            updateStats();
+            renderCategories();
+            updateRentalStats();
+            
+            // Form handlers
+            document.getElementById('addForm').addEventListener('submit', handleAddItem);
+            document.getElementById('sellForm').addEventListener('submit', handleSellItem);
+            document.getElementById('editForm').addEventListener('submit', handleEditItem);
+            document.getElementById('addCategoryForm').addEventListener('submit', handleAddCategory);
+            document.getElementById('addAssetForm').addEventListener('submit', handleAddAsset);
+            document.getElementById('addDealForm').addEventListener('submit', handleAddDeal);
+            document.getElementById('addExpenseForm').addEventListener('submit', handleAddExpense);
+        });
+
+        // Tab switching
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            if (tab === 'resale') {
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.getElementById('resale-tab').classList.add('active');
+            } else if (tab === 'rental') {
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.getElementById('rental-tab').classList.add('active');
+            }
+        }
+
+        // Add item
+        function handleAddItem(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('addName').value.trim();
+            const price = parseFloat(document.getElementById('addPrice').value);
+            
+            if (name && price > 0) {
+                const item = {
+                    id: Date.now(),
+                    name: name,
+                    buyPrice: Math.round(price),
+                    sellPrice: null,
+                    date: new Date().toISOString()
+                };
+                
+                items.unshift(item);
+                saveData();
+                renderItems();
+                updateStats();
+                closeModal('addModal');
+                e.target.reset();
+            }
+        }
+
+        // Open sell modal
+        function openSellModal(index) {
+            currentSellIndex = index;
+            const item = items[index];
+            
+            document.getElementById('sellItemName').textContent = item.name;
+            document.getElementById('sellBuyPrice').textContent = `$ ${formatNumber(item.buyPrice)}`;
+            document.getElementById('sellPrice').value = '';
+            document.getElementById('sellModal').classList.add('active');
+        }
+
+        // Sell item
+        function handleSellItem(e) {
+            e.preventDefault();
+            
+            const price = parseFloat(document.getElementById('sellPrice').value);
+            
+            if (price > 0) {
+                items[currentSellIndex].sellPrice = Math.round(price);
+                saveData();
+                renderItems();
+                updateStats();
+                closeModal('sellModal');
+            }
+        }
+
+        // Open edit modal
+        function openEditModal(index) {
+            currentEditIndex = index;
+            const item = items[index];
+            
+            document.getElementById('editName').value = item.name;
+            document.getElementById('editBuyPrice').value = item.buyPrice;
+            document.getElementById('editSellPrice').value = item.sellPrice || '';
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        // Edit item
+        function handleEditItem(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('editName').value.trim();
+            const buyPrice = parseFloat(document.getElementById('editBuyPrice').value);
+            const sellPriceInput = document.getElementById('editSellPrice').value;
+            const sellPrice = sellPriceInput ? Math.round(parseFloat(sellPriceInput)) : null;
+            
+            if (name && buyPrice > 0) {
+                items[currentEditIndex].name = name;
+                items[currentEditIndex].buyPrice = Math.round(buyPrice);
+                items[currentEditIndex].sellPrice = sellPrice;
+                
+                saveData();
+                renderItems();
+                updateStats();
+                closeModal('editModal');
+            }
+        }
+
+        // Delete item
+        function deleteItem(index) {
+            if (confirm('Вы уверены, что хотите удалить этот товар?')) {
+                items.splice(index, 1);
+                saveData();
+                renderItems();
+                updateStats();
+            }
+        }
+
+        // Render items
+        function renderItems() {
+            const tbody = document.getElementById('itemsTable');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (items.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            tbody.innerHTML = items.map((item, index) => {
+                const profit = item.sellPrice ? (item.sellPrice - item.buyPrice) : null;
+                const profitClass = profit !== null ? (profit >= 0 ? 'profit-positive' : 'profit-negative') : '';
+                const statusClass = item.sellPrice ? 'status-sold' : 'status-available';
+                const statusText = item.sellPrice ? 'Продано' : 'В наличии';
+                const date = new Date(item.date).toLocaleDateString('ru-RU', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                return `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><span class="item-name">${item.name}</span></td>
+                        <td><span class="price-buy">$ ${formatNumber(item.buyPrice)}</span></td>
+                        <td>${item.sellPrice ? `<span class="price-sell">$ ${formatNumber(item.sellPrice)}</span>` : '<span class="price-empty">—</span>'}</td>
+                        <td>${profit !== null ? `<span class="${profitClass}">$ ${formatNumber(profit)}</span>` : '<span class="price-empty">—</span>'}</td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td><span class="date-text">${date}</span></td>
+                        <td>
+                            <div class="action-buttons">
+                                ${!item.sellPrice ? `<button class="btn-action btn-sell" onclick="openSellModal(${index})">Продать</button>` : ''}
+                                <button class="btn-action btn-edit" onclick="openEditModal(${index})">✏️</button>
+                                <button class="btn-action btn-delete" onclick="deleteItem(${index})">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Update statistics
+        function updateStats() {
+            const soldItems = items.filter(item => item.sellPrice !== null);
+            const totalIncome = soldItems.reduce((sum, item) => sum + item.sellPrice, 0);
+            const totalExpense = soldItems.reduce((sum, item) => sum + item.buyPrice, 0);
+            const totalProfit = totalIncome - totalExpense;
+            const profitPercent = totalExpense > 0 ? ((totalProfit / totalExpense) * 100) : 0;
+            
+            document.getElementById('totalIncome').textContent = `$ ${formatNumber(totalIncome)}`;
+            document.getElementById('totalExpense').textContent = `$ ${formatNumber(totalExpense)}`;
+            document.getElementById('totalProfit').textContent = `$ ${formatNumber(totalProfit)}`;
+            
+            document.getElementById('soldCount').textContent = `${soldItems.length} продано`;
+            document.getElementById('investedCount').textContent = `${items.length} товаров`;
+            document.getElementById('profitPercent').textContent = `${profitPercent.toFixed(0)}% ROI`;
+        }
+
+        // === RENTAL FUNCTIONS ===
+
+        // Format number with thousand separators
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        // Add category
+        function handleAddCategory(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('categoryName').value.trim();
+            const description = document.getElementById('categoryDescription').value.trim();
+            
+            if (name && description) {
+                const category = {
+                    id: Date.now(),
+                    name: name,
+                    description: description,
+                    assets: [],
+                    transactions: []
+                };
+                
+                categories.push(category);
+                saveRentalData();
+                renderCategories();
+                updateRentalStats();
+                closeModal('addCategoryModal');
+                e.target.reset();
+            }
+        }
+
+        // Render categories
+        function renderCategories() {
+            const list = document.getElementById('categoriesList');
+            
+            if (categories.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state" style="padding: 40px 20px;">
+                        <div class="empty-state-icon">🏢</div>
+                        <h3 style="font-size: 18px;">Нет категорий</h3>
+                        <p>Добавьте первую категорию</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            list.innerHTML = categories.map(cat => `
+                <div class="category-item ${selectedCategoryId === cat.id ? 'active' : ''}" onclick="selectCategory(${cat.id})">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div class="category-name">${cat.name}</div>
+                            <div class="category-description">${cat.description}</div>
+                        </div>
+                        <button class="btn-action btn-delete" onclick="event.stopPropagation(); deleteCategory(${cat.id})" style="padding: 5px 10px; font-size: 12px;">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Delete category
+        function deleteCategory(categoryId) {
+            if (confirm('Удалить эту категорию и всё её имущество?')) {
+                categories = categories.filter(c => c.id !== categoryId);
+                if (selectedCategoryId === categoryId) {
+                    selectedCategoryId = null;
+                    document.getElementById('selectedCategoryName').textContent = 'Выберите категорию';
+                    document.getElementById('addAssetBtn').disabled = true;
+                    document.getElementById('assetsList').innerHTML = `
+                        <div class="empty-state" style="padding: 40px 20px;">
+                            <div class="empty-state-icon">🚗</div>
+                            <h3 style="font-size: 18px;">Выберите категорию</h3>
+                            <p>Выберите категорию слева</p>
+                        </div>
+                    `;
+                }
+                saveRentalData();
+                renderCategories();
+                updateRentalStats();
+            }
+        }
+
+        // Select category
+        function selectCategory(categoryId) {
+            selectedCategoryId = categoryId;
+            renderCategories();
+            renderAssets();
+            document.getElementById('addAssetBtn').disabled = false;
+            
+            const category = categories.find(c => c.id === categoryId);
+            document.getElementById('selectedCategoryName').textContent = category.name;
+        }
+
+        // Add asset
+        function handleAddAsset(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('assetName').value.trim();
+            
+            if (name && selectedCategoryId) {
+                const category = categories.find(c => c.id === selectedCategoryId);
+                const asset = {
+                    id: Date.now(),
+                    name: name,
+                    status: 'free',
+                    deals: []
+                };
+                
+                category.assets.push(asset);
+                saveRentalData();
+                renderAssets();
+                updateRentalStats();
+                closeModal('addAssetModal');
+                e.target.reset();
+            }
+        }
+
+        // Render assets
+        function renderAssets() {
+            const list = document.getElementById('assetsList');
+            const category = categories.find(c => c.id === selectedCategoryId);
+            
+            if (!category || category.assets.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state" style="padding: 40px 20px;">
+                        <div class="empty-state-icon">🚗</div>
+                        <h3 style="font-size: 18px;">Нет имущества</h3>
+                        <p>Добавьте первое имущество</p>
+                    </div>
+                `;
+                document.getElementById('dealsList').style.display = 'none';
+                return;
+            }
+            
+            list.innerHTML = category.assets.map(asset => {
+                const statusClass = asset.status === 'free' ? 'asset-free' : 'asset-occupied';
+                const statusText = asset.status === 'free' ? 'Свободно' : 'Занято';
+                const occupiedUntil = asset.deals.length > 0 ? new Date(asset.deals[0].endDate).toLocaleString('ru-RU') : '';
+                
+                return `
+                    <div class="asset-card">
+                        <div class="asset-info">
+                            <h3>${asset.name}</h3>
+                            <div class="asset-status-text">
+                                ${asset.status === 'occupied' ? `Занято до ${occupiedUntil}` : 'Готово к аренде'}
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <span class="asset-status-badge ${statusClass}">${statusText}</span>
+                            <button class="btn-action btn-sell" onclick="openDealModal(${asset.id})" style="padding: 8px 15px;">Новая сделка</button>
+                            <button class="btn-action btn-edit" onclick="openExpenseModal(${asset.id})" style="padding: 8px 15px;">Расход</button>
+                            <button class="btn-action btn-delete" onclick="deleteAsset(${asset.id})" style="padding: 8px 15px;">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            renderDeals();
+        }
+
+        // Delete asset
+        function deleteAsset(assetId) {
+            if (confirm('Удалить это имущество?')) {
+                const category = categories.find(c => c.id === selectedCategoryId);
+                category.assets = category.assets.filter(a => a.id !== assetId);
+                saveRentalData();
+                renderAssets();
+                updateRentalStats();
+            }
+        }
+
+        // Render deals
+        function renderDeals() {
+            const category = categories.find(c => c.id === selectedCategoryId);
+            if (!category) return;
+            
+            const allDeals = [];
+            category.assets.forEach(asset => {
+                asset.deals.forEach(deal => {
+                    allDeals.push({...deal, assetName: asset.name});
+                });
+            });
+            
+            const dealsList = document.getElementById('dealsList');
+            
+            if (allDeals.length === 0) {
+                dealsList.style.display = 'none';
+                return;
+            }
+            
+            dealsList.style.display = 'block';
+            dealsList.innerHTML = '<h3 style="color: #fff; margin-bottom: 15px; font-size: 18px;">Сделки</h3>' + 
+                allDeals.map(deal => `
+                    <div class="deal-item">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong style="color: #fff;">${deal.assetName}</strong>
+                                <div class="deal-dates">
+                                    ${new Date(deal.startDate).toLocaleDateString('ru-RU')} - ${new Date(deal.endDate).toLocaleDateString('ru-RU')}
+                                </div>
+                            </div>
+                            <div style="color: #4CAF50; font-weight: 700; font-size: 18px;">$ ${formatNumber(deal.profit)}</div>
+                        </div>
+                    </div>
+                `).join('');
+        }
+
+        // Open deal modal
+        function openDealModal(assetId) {
+            selectedAssetId = assetId;
+            const category = categories.find(c => c.id === selectedCategoryId);
+            const asset = category.assets.find(a => a.id === assetId);
+            
+            document.getElementById('dealAssetName').textContent = asset.name;
+            document.getElementById('dealPricePerHour').value = '';
+            document.getElementById('dealHours').value = '';
+            document.getElementById('dealTotalDisplay').value = '$ 0';
+            document.getElementById('addDealModal').classList.add('active');
+        }
+
+        // Calculate deal total
+        function calculateDealTotal() {
+            const pricePerHour = parseFloat(document.getElementById('dealPricePerHour').value) || 0;
+            const hours = parseFloat(document.getElementById('dealHours').value) || 0;
+            const total = Math.round(pricePerHour * hours);
+            document.getElementById('dealTotalDisplay').value = `$ ${formatNumber(total)}`;
+        }
+
+        // Add deal
+        function handleAddDeal(e) {
+            e.preventDefault();
+            
+            const pricePerHour = parseFloat(document.getElementById('dealPricePerHour').value);
+            const hours = parseFloat(document.getElementById('dealHours').value);
+            const profit = Math.round(pricePerHour * hours);
+            const startDate = document.getElementById('dealStartDate').value;
+            const endDate = document.getElementById('dealEndDate').value;
+            
+            if (pricePerHour && hours && hours <= 100 && startDate && endDate) {
+                const category = categories.find(c => c.id === selectedCategoryId);
+                const asset = category.assets.find(a => a.id === selectedAssetId);
+                
+                const deal = {
+                    id: Date.now(),
+                    profit: profit,
+                    pricePerHour: Math.round(pricePerHour),
+                    hours: hours,
+                    startDate: new Date(startDate).toISOString(),
+                    endDate: new Date(endDate).toISOString()
+                };
+                
+                asset.deals.unshift(deal);
+                asset.status = 'occupied';
+                
+                // Add transaction
+                category.transactions.push({
+                    id: Date.now(),
+                    type: 'income',
+                    amount: profit,
+                    comment: `Аренда ${asset.name} (${hours}ч × $${Math.round(pricePerHour)})`,
+                    date: new Date().toISOString()
+                });
+                
+                // Schedule status update
+                const endTime = new Date(endDate).getTime() - Date.now();
+                if (endTime > 0) {
+                    setTimeout(() => {
+                        asset.status = 'free';
+                        saveRentalData();
+                        renderAssets();
+                    }, endTime);
+                }
+                
+                saveRentalData();
+                renderAssets();
+                updateRentalStats();
+                closeModal('addDealModal');
+                e.target.reset();
+            }
+        }
+
+        // Open expense modal
+        function openExpenseModal(assetId) {
+            selectedAssetId = assetId;
+            document.getElementById('addExpenseModal').classList.add('active');
+        }
+
+        // Add expense
+        function handleAddExpense(e) {
+            e.preventDefault();
+            
+            const amount = Math.round(parseFloat(document.getElementById('expenseAmount').value));
+            const comment = document.getElementById('expenseComment').value.trim();
+            
+            if (amount && comment) {
+                const category = categories.find(c => c.id === selectedCategoryId);
+                
+                category.transactions.push({
+                    id: Date.now(),
+                    type: 'expense',
+                    amount: amount,
+                    comment: comment,
+                    date: new Date().toISOString()
+                });
+                
+                saveRentalData();
+                updateRentalStats();
+                closeModal('addExpenseModal');
+                e.target.reset();
+            }
+        }
+
+        // Update rental stats
+        function updateRentalStats() {
+            let totalIncome = 0;
+            let totalExpense = 0;
+            let totalDeals = 0;
+            let totalAssets = 0;
+            
+            categories.forEach(cat => {
+                cat.transactions.forEach(trans => {
+                    if (trans.type === 'income') {
+                        totalIncome += trans.amount;
+                        totalDeals++;
+                    } else {
+                        totalExpense += trans.amount;
+                    }
+                });
+                totalAssets += cat.assets.length;
+            });
+            
+            const totalProfit = totalIncome - totalExpense;
+            
+            document.getElementById('rentalIncome').textContent = `$ ${formatNumber(totalIncome)}`;
+            document.getElementById('rentalExpense').textContent = `$ ${formatNumber(totalExpense)}`;
+            document.getElementById('rentalProfit').textContent = `$ ${formatNumber(totalProfit)}`;
+            document.getElementById('rentalDealsCount').textContent = `${totalDeals} сделок`;
+            document.getElementById('rentalExpensesCount').textContent = `${categories.reduce((sum, cat) => sum + cat.transactions.filter(t => t.type === 'expense').length, 0)} расходов`;
+            document.getElementById('rentalAssetsCount').textContent = `${totalAssets} имуществ`;
+        }
+
+        // Modal functions
+        function openAddModal() {
+            document.getElementById('addModal').classList.add('active');
+            document.getElementById('addName').focus();
+        }
+
+        function openAddCategoryModal() {
+            document.getElementById('addCategoryModal').classList.add('active');
+        }
+
+        function openAddAssetModal() {
+            if (selectedCategoryId) {
+                document.getElementById('addAssetModal').classList.add('active');
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Close modal on outside click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                }
+            });
+        });
+
+        // Save data
+        function saveData() {
+            localStorage.setItem('moneyTrackerItems', JSON.stringify(items));
+        }
+
+        function saveRentalData() {
+            localStorage.setItem('rentalCategories', JSON.stringify(categories));
+        }
+    </script>
+</body>
+</html>
